@@ -16,6 +16,9 @@
 
 package com.example.android.trackmysleepquality
 
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -24,10 +27,14 @@ import com.example.android.trackmysleepquality.database.SleepDatabaseDao
 import com.example.android.trackmysleepquality.database.SleepNight
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * This is not meant to be a full set of tests. For simplicity, most of your samples do not
@@ -37,6 +44,9 @@ import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class SleepDatabaseTest {
+
+    @get:Rule
+    val instantTaskExecutorRule = InstantTaskExecutorRule()
 
     private lateinit var sleepDao: SleepDatabaseDao
     private lateinit var db: SleepDatabase
@@ -66,6 +76,45 @@ class SleepDatabaseTest {
         sleepDao.insert(night)
         val tonight = sleepDao.getTonight()
         assertEquals(tonight?.sleepQuality, -1)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun updateAndGetNight() {
+        val night = SleepNight()
+        sleepDao.insert(night)
+        val tonight = sleepDao.getTonight()
+        assertNotNull(tonight)
+        val tonightId = tonight!!.nightId
+        sleepDao.update(SleepNight(nightId = tonightId, sleepQuality = 5))
+        val updatedTonight = sleepDao.get(tonightId)
+        assertEquals(updatedTonight?.sleepQuality, 5)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun insertAndGetAll() {
+        val nightOne = SleepNight()
+        val nightTwo = SleepNight()
+        sleepDao.insert(nightOne)
+        sleepDao.insert(nightTwo)
+        val allNights = sleepDao.getAllNights().blockingObserve()
+        assertEquals(allNights?.size, 2)
+    }
+
+    private fun <T> LiveData<T>.blockingObserve(): T? {
+        var value: T? = null
+        val latch = CountDownLatch(1)
+
+        val observer = Observer<T> { t ->
+            value = t
+            latch.countDown()
+        }
+
+        observeForever(observer)
+
+        latch.await(2, TimeUnit.SECONDS)
+        return value
     }
 }
 
