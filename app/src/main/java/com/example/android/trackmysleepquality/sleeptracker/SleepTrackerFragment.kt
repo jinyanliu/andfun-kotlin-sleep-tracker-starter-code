@@ -63,11 +63,11 @@ class SleepTrackerFragment : Fragment() {
             }
         })
 
-        sleepTrackerViewModel.showSnackbarEvent.observe(this, Observer {
-            if(it == true){
+        sleepTrackerViewModel.showSnackbarEvent.observe(this, Observer { message ->
+            message?.let {
                 Snackbar.make(
                     activity!!.findViewById(android.R.id.content),
-                    getString(R.string.cleared_message),
+                    it,
                     Snackbar.LENGTH_SHORT
                 ).show()
                 sleepTrackerViewModel.doneShowingSnackbar()

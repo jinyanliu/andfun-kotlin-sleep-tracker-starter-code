@@ -21,6 +21,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
+import com.example.android.trackmysleepquality.R
 import com.example.android.trackmysleepquality.database.SleepDatabaseDao
 import com.example.android.trackmysleepquality.database.SleepNight
 import com.example.android.trackmysleepquality.formatNights
@@ -35,7 +36,7 @@ import kotlinx.coroutines.withContext
  */
 class SleepTrackerViewModel(
         val database: SleepDatabaseDao,
-        application: Application) : AndroidViewModel(application) {
+        @get:JvmName("getApp") val application: Application) : AndroidViewModel(application) {
 
         private val viewModelJob = Job()
 
@@ -65,8 +66,8 @@ class SleepTrackerViewModel(
                 it?.isNotEmpty()
         }
 
-        private var _showSnackbarEvent = MutableLiveData<Boolean>()
-        val showSnackbarEvent: LiveData<Boolean>
+        private var _showSnackbarEvent = MutableLiveData<String?>()
+        val showSnackbarEvent: LiveData<String?>
                 get() = _showSnackbarEvent
 
         init {
@@ -74,7 +75,7 @@ class SleepTrackerViewModel(
         }
 
         fun doneShowingSnackbar(){
-                _showSnackbarEvent.value = false
+                _showSnackbarEvent.value = null
         }
 
         fun doneNavigation() {
@@ -127,10 +128,11 @@ class SleepTrackerViewModel(
         }
 
         fun onClear() {
+
                 uiScope.launch {
                         clear()
                         tonight.value = null
-                        _showSnackbarEvent.value = true
+                        _showSnackbarEvent.value = application.getString(R.string.cleared_message)
                 }
         }
 
